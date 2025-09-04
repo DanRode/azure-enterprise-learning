@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "anthropic.claude-dev",
+    "hashicorp.terraform",
+    "ms-vscode.azure-account",
+    "ms-kubernetes-tools.vscode-kubernetes-tools",
+    "ms-azuretools.vscode-azureterraform",
+    "redhat.vscode-yaml"
+  ]
+}

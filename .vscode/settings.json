@@ -1,0 +1,18 @@
+{
+  "terraform.validation.enable": true,
+  "terraform.format.enable": true,
+  "files.associations": {
+    "*.tf": "terraform",
+    "*.tfvars": "terraform"
+  },
+  "yaml.schemas": {
+    "kubernetes://schema/v1.20.0": "k8s/*.yaml"
+  },
+  "files.watcherExclude": {
+    "**/terraform/**/.terraform/**": true
+  },
+  "search.exclude": {
+    "**/terraform/**/.terraform/**": true,
+    "**/node_modules": true
+  }
+}

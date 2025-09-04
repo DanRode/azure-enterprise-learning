@@ -1,0 +1,57 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Terraform Init Dev",
+      "type": "shell",
+      "command": "terraform",
+      "args": ["init"],
+      "options": {
+        "cwd": "${workspaceFolder}/terraform/environments/dev"
+      },
+      "group": "build"
+    },
+    {
+      "label": "Terraform Plan Dev",
+      "type": "shell",
+      "command": "terraform",
+      "args": ["plan"],
+      "options": {
+        "cwd": "${workspaceFolder}/terraform/environments/dev"
+      },
+      "group": "build"
+    },
+    {
+      "label": "Daily Cost Check",
+      "type": "shell",
+      "command": "az",
+      "args": [
+        "consumption",
+        "usage",
+        "list",
+        "--start-date",
+        "${input:startDate}",
+        "--end-date",
+        "${input:endDate}"
+      ]
+    },
+    {
+      "label": "Daily Destroy Dev",
+      "type": "shell",
+      "command": "./scripts/daily-destroy.sh",
+      "args": ["dev"]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "startDate",
+      "description": "Start date (YYYY-MM-DD)",
+      "default": "2024-09-01"
+    },
+    {
+      "id": "endDate",
+      "description": "End date (YYYY-MM-DD)",
+      "default": "2024-09-05"
+    }
+  ]
+}
