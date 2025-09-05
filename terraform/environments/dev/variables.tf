@@ -16,6 +16,12 @@ variable "vnet_address_space" {
   default     = "10.0.0.0/16"
 }
 
+variable "kubernetes_version" {
+  description = "Kubernetes version for AKS cluster"
+  type        = string
+  default     = null # Uses latest supported version
+}
+
 variable "tags" {
   description = "Tags for dev environment resources"
   type        = map(string)
