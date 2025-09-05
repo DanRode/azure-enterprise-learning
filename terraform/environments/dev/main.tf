@@ -37,3 +37,16 @@ module "networking" {
   
   tags = var.tags
 }
+
+# Use our AKS module
+module "aks" {
+  source = "../../modules/aks"
+  
+  name_prefix         = var.name_prefix
+  location           = var.location
+  resource_group_name = azurerm_resource_group.main.name
+  subnet_id          = module.networking.aks_subnet_id
+  kubernetes_version = var.kubernetes_version
+  
+  tags = var.tags
+}

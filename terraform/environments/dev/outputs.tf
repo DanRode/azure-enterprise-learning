@@ -27,3 +27,19 @@ output "database_subnet_id" {
   description = "ID of the database subnet"
   value       = module.networking.database_subnet_id
 }
+
+# AKS outputs
+output "aks_cluster_name" {
+  description = "Name of the AKS cluster"
+  value       = module.aks.cluster_name
+}
+
+output "aks_cluster_fqdn" {
+  description = "FQDN of the AKS cluster"
+  value       = module.aks.cluster_fqdn
+}
+
+output "aks_cluster_id" {
+  description = "ID of the AKS cluster"
+  value       = module.aks.cluster_id
+}
