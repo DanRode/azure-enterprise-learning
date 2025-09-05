@@ -1,265 +1,458 @@
 # Azure Enterprise Learning - Setup Requirements
 
-## Prerequisites and Installation Guide
+## Overview
 
-This document captures all tools, configurations, and setup steps required to replicate this Azure enterprise learning environment.
+This document outlines the complete setup requirements for the Azure Enterprise Learning project, focusing on the enterprise-grade Azure Container Registry (ACR) pattern with environment tag promotion strategy.
 
-## Required Tool Installations
+## Prerequisites
 
-### 1. Azure CLI
-**Status:** ✅ Pre-installed  
-**Version:** Latest  
-**Purpose:** Azure resource management and authentication  
+### Azure Subscription
 
-```bash
-# Installation (if needed)
-brew install azure-cli
+- **Active Azure Subscription:** `7a5bee06-2155-4808-885b-ba1c53c04dbd`
+- **Budget:** $200 Azure credit, target $100 total spend
+- **Cost Control:** Daily destroy/rebuild pattern for learning
 
-# Verification
-az --version
-az account show
-```
+### Development Environment
 
-### 2. Terraform
-**Status:** ✅ Pre-installed  
-**Version:** Latest  
-**Purpose:** Infrastructure as Code management  
+#### Required Software
 
 ```bash
-# Installation (if needed)
-brew install terraform
+# Azure CLI (latest)
+az --version  # Should be 2.50.0+
 
-# Verification
+# Terraform (1.5+)
 terraform --version
-```
 
-### 3. kubectl
-**Status:** ✅ Pre-installed  
-**Version:** Latest  
-**Purpose:** Kubernetes cluster management  
+# Docker (for container operations)
+docker --version
 
-```bash
-# Installation (if needed)
-brew install kubectl
-
-# Verification
+# kubectl (Kubernetes CLI)
 kubectl version --client
+
+# Git (for source control)
+git --version
 ```
 
-### 4. kubelogin (CRITICAL - Missing Initially)
-**Status:** ❌ Missing, caused authentication failures  
-**Version:** Latest  
-**Purpose:** Azure AD authentication for AKS clusters  
-**Issue:** AKS with Azure AD integration requires kubelogin for kubectl access
+#### VS Code Extensions (Recommended)
+
+- Azure Tools for VS Code
+- Terraform Extension for VS Code
+- Kubernetes Extension for VS Code
+- Docker Extension for VS Code
+
+## Azure Service Principal Configuration
+
+### Critical Setup: Terraform Service Principal
+
+**Service Principal ID:** `b5422da7-4709-4cdd-9ca4-47ea063df820`  
+**Name:** `terraform-sp`
+
+#### Required Permissions
+
+**For Learning Environment (Temporary):**
 
 ```bash
-# Installation (REQUIRED)
-brew install Azure/kubelogin/kubelogin
-
-# Verification
-kubelogin --version
-
-# This was the error when missing:
-# "kubelogin is not installed which is required to connect to AAD enabled cluster"
+# Grant Owner role for learning (enables role assignments)
+az role assignment create \
+  --assignee b5422da7-4709-4cdd-9ca4-47ea063df820 \
+  --role Owner \
+  --scope /subscriptions/7a5bee06-2155-4808-885b-ba1c53c04dbd
 ```
 
-### 5. Git
-**Status:** ✅ Pre-installed  
-**Purpose:** Version control and repository management  
+**Why Owner Role is Needed:**
+- AKS-ACR integration requires `AcrPull` role assignments
+- Role assignments need `User Access Administrator` or `Owner` permissions
+- Contributor role is insufficient for RBAC operations
 
-## Azure Account Requirements
+#### Enterprise Production Pattern
 
-### 1. Azure Subscription
-**Requirement:** Active Azure subscription with sufficient credits  
-**Used:** Personal subscription with $200 credit  
-**Estimated Cost:** ~$2-3/day for dev environment  
-
-### 2. Azure Authentication
-**Method:** Azure CLI login  
-**Setup:**
-```bash
-az login
-az account set --subscription "<subscription-id>"
-```
-
-### 3. Terraform Backend Storage
-**Requirement:** Azure Storage Account for Terraform state  
-**Configuration:**
-- Resource Group: `tfstate-rg`
-- Storage Account: `tfstatec18b586c`
-- Container: `tfstate`
-- State Files: Environment-specific (e.g., `dev/terraform.tfstate`)
-
-## Repository Setup
-
-### 1. .gitignore Configuration
-**Status:** ❌ Missing initially, caused large file commit errors  
-**Issue:** Terraform provider binaries (260MB+) were committed to git  
-**Solution:** Created comprehensive .gitignore
+For production environments, use separate service principals:
 
 ```bash
-# The error that occurred:
-# "terraform-provider-azurerm_v3.117.1_x5 is 260.76 MB; 
-#  this exceeds GitHub's file size limit of 100.00 MB"
+# Infrastructure Service Principal
+az ad sp create-for-rbac \
+  --name "terraform-infrastructure-sp" \
+  --role "Contributor" \
+  --scopes "/subscriptions/7a5bee06-2155-4808-885b-ba1c53c04dbd"
+
+# RBAC Service Principal  
+az ad sp create-for-rbac \
+  --name "terraform-rbac-sp" \
+  --role "User Access Administrator" \
+  --scopes "/subscriptions/7a5bee06-2155-4808-885b-ba1c53c04dbd"
 ```
 
-**Critical exclusions added:**
-```gitignore
-# Terraform files and directories
-**/.terraform/
-**/.terraform.lock.hcl
-*.tfstate
-*.tfstate.*
-*.tfplan
-*.tfplan.*
-*.out
-
-# Azure CLI and credentials
-azure-sp.json
-.azure/
-
-# IDE and OS files
-.vscode/settings.json
-.DS_Store
-```
-
-### 2. Directory Structure
-**Created Structure:**
-```
-azure-enterprise-learning/
-├── .gitignore                    # CRITICAL - was missing
-├── terraform/
-│   ├── backend.tf               # Shared backend config
-│   ├── modules/                 # Reusable modules
-│   │   ├── networking/
-│   │   └── aks/
-│   └── environments/            # Environment-specific configs
-│       └── dev/
-├── k8s/                        # Kubernetes manifests
-├── scripts/                    # Automation scripts
-└── apps/                       # Application source code
-```
-
-## Development Environment Setup
-
-### 1. VS Code Extensions (Recommended)
-```json
-{
-  "recommendations": [
-    "hashicorp.terraform",
-    "ms-kubernetes-tools.vscode-kubernetes-tools",
-    "ms-vscode.azure-account",
-    "ms-azuretools.vscode-azureterraform"
-  ]
-}
-```
-
-### 2. Shell Configuration
-**Requirement:** Terraform and kubectl in PATH  
-**Verification:**
-```bash
-which terraform
-which kubectl
-which az
-which kubelogin  # This was missing!
-```
-
-## Network and Security Setup
-
-### 1. Azure Resource Providers
-**Status:** ✅ Automatically registered  
-**Required providers:**
-- Microsoft.ContainerService (AKS)
-- Microsoft.Network (VNet, NSGs)
-- Microsoft.OperationalInsights (Log Analytics)
-
-### 2. Local Network Requirements
-**Requirement:** Outbound HTTPS access for:
-- Azure API endpoints
-- Terraform provider downloads
-- Container image pulls
-- kubectl API access
-
-## Troubleshooting - Issues Encountered
-
-### Issue 1: kubelogin Missing
-**Problem:** kubectl commands failed with Azure AD authentication error  
-**Error Message:**
-```
-kubelogin is not installed which is required to connect to AAD enabled cluster.
-```
-**Solution:** `brew install Azure/kubelogin/kubelogin`
-
-### Issue 2: Git Large File Error
-**Problem:** Terraform .terraform/ directory committed to git  
-**Error Message:**
-```
-terraform-provider-azurerm_v3.117.1_x5 is 260.76 MB; 
-this exceeds GitHub's file size limit of 100.00 MB
-```
-**Solution:** 
-1. Created .gitignore with Terraform exclusions
-2. Removed files from git: `git rm -r --cached terraform/environments/dev/.terraform/`
-
-### Issue 3: Azure AD Permissions
-**Problem:** User account lacked cluster admin permissions  
-**Error:** `User "uuid" cannot list resource "nodes"`  
-**Solution:** Used admin credentials: `az aks get-credentials --admin`
-
-### Issue 4: Terraform Module Not Found
-**Problem:** Added new module but didn't reinitialize  
-**Error:** `Module not installed. Run "terraform init"`  
-**Solution:** `terraform init` after adding new modules
-
-## Environment Variables (Optional)
+#### Environment Variables
 
 ```bash
-# Terraform backend configuration (if using variables)
-export ARM_RESOURCE_GROUP_NAME="tfstate-rg"
-export ARM_STORAGE_ACCOUNT_NAME="tfstatec18b586c"
-export ARM_CONTAINER_NAME="tfstate"
-
-# Azure authentication (alternative to az login)
-export ARM_CLIENT_ID="<client-id>"
-export ARM_CLIENT_SECRET="<client-secret>"
-export ARM_SUBSCRIPTION_ID="<subscription-id>"
+# Set Terraform authentication
+export ARM_CLIENT_ID="b5422da7-4709-4cdd-9ca4-47ea063df820"
+export ARM_CLIENT_SECRET="<service-principal-secret>"
+export ARM_SUBSCRIPTION_ID="7a5bee06-2155-4808-885b-ba1c53c04dbd"
 export ARM_TENANT_ID="<tenant-id>"
 ```
 
-## Quick Setup Checklist
+## Terraform Backend Configuration
 
-Before starting the project:
+### Azure Storage Account
 
-- [ ] Azure CLI installed and logged in (`az login`)
-- [ ] Terraform installed and verified
-- [ ] kubectl installed and verified  
-- [ ] **kubelogin installed** (CRITICAL)
-- [ ] Git repository initialized
-- [ ] **.gitignore created** (prevents large file commits)
-- [ ] Azure subscription with sufficient credits
-- [ ] Terraform backend storage configured
-- [ ] VS Code with recommended extensions (optional)
-
-## Verification Commands
-
-Run these to verify your setup:
+**Pre-requisite:** Storage account for remote state management
 
 ```bash
-# Tool versions
-az --version
-terraform --version  
-kubectl version --client
-kubelogin --version
+# Create resource group for Terraform state
+az group create \
+  --name tfstate-rg \
+  --location "East US"
 
-# Azure connectivity
-az account show
-az account list-locations --output table
+# Create storage account (unique name required)
+az storage account create \
+  --name tfstatec18b586c \
+  --resource-group tfstate-rg \
+  --location "East US" \
+  --sku Standard_LRS
 
-# Terraform backend access
-terraform init  # Should succeed without errors
-
-# Git setup
-git status      # Should not show .terraform/ files
+# Create container for state files
+az storage container create \
+  --name tfstate \
+  --account-name tfstatec18b586c
 ```
 
-This setup ensures a clean, reproducible development environment for Azure enterprise learning projects.
+### Backend Configuration
+
+```hcl
+# terraform/backend.tf
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "tfstate-rg"
+    storage_account_name = "tfstatec18b586c"
+    container_name       = "tfstate"
+    key                  = "terraform.tfstate"
+  }
+  
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+}
+```
+
+## Container Registry Requirements
+
+### Enterprise ACR Pattern
+
+**Design Decision:** Single shared ACR with environment tag promotion
+
+#### ACR Configuration
+
+```hcl
+# ACR Resource (inline in dev environment)
+resource "azurerm_container_registry" "shared" {
+  name                = "sharedlearnacr"
+  resource_group_name = module.networking.resource_group_name
+  location            = module.networking.resource_group_location
+  sku                 = "Basic"        # Cost optimization: ~$5/month
+  admin_enabled       = false          # Use managed identity instead
+
+  tags = {
+    Environment = "shared"
+    Project     = "azure-enterprise-learning"
+    CostCenter  = "learning"
+  }
+}
+```
+
+#### Container Naming Convention
+
+```text
+Registry: sharedlearnacr.azurecr.io
+├── api-service-1/
+│   ├── v1.2.3-commit-abc123    # Immutable build artifact
+│   ├── dev-ready               # Environment promotion tag
+│   ├── staging-ready           # Manual approval gate
+│   └── prod-ready              # Production ready
+├── api-service-2/
+└── web-app/
+```
+
+## AKS Configuration Requirements
+
+### Cluster Specifications
+
+#### Development Environment
+
+```hcl
+# Minimal viable configuration for learning
+default_node_pool {
+  name            = "default"
+  node_count      = 1              # Cost optimization
+  vm_size         = "Standard_B2s" # Cheapest viable size
+  os_disk_size_gb = 30            # Minimal disk
+  max_pods        = 110           # Default
+}
+```
+
+#### Network Configuration
+
+```hcl
+# Network settings
+network_profile {
+  network_plugin    = "azure"
+  dns_service_ip    = "10.1.0.10"
+  service_cidr      = "10.1.0.0/16"    # Separate from VNet CIDR
+  docker_bridge_cidr = "172.17.0.1/16"
+}
+```
+
+### AKS-ACR Integration
+
+**Critical:** Role assignment for container image access
+
+```hcl
+# AKS kubelet identity needs AcrPull permission
+resource "azurerm_role_assignment" "aks_acr_pull" {
+  scope                = azurerm_container_registry.shared.id
+  role_definition_name = "AcrPull"
+  principal_id         = module.aks.kubelet_identity[0].object_id
+}
+```
+
+## Module Architecture
+
+### Reusable Modules (terraform/modules/)
+
+#### Networking Module
+
+**Justification:** High reuse (3+ environments), complex configuration
+
+```text
+terraform/modules/networking/
+├── main.tf       # VNet, subnets, NSGs
+├── variables.tf  # Configurable CIDR blocks
+├── outputs.tf    # Network references
+└── README.md     # Module documentation
+```
+
+#### AKS Module
+
+**Justification:** Complex multi-resource setup, environment reuse
+
+```text
+terraform/modules/aks/
+├── main.tf       # Cluster, node pools, monitoring
+├── variables.tf  # Node configuration, RBAC settings
+├── outputs.tf    # Cluster credentials, kubelet identity
+└── README.md     # Module documentation
+```
+
+### Inline Resources (terraform/environments/*/main.tf)
+
+#### Resources Kept Inline
+
+- **ACR:** Simple configuration, shared across environments
+- **PostgreSQL:** Environment-specific sizing requirements
+- **Key Vault:** Per-environment secrets, minimal complexity
+
+## Environment Structure
+
+### Directory Organization
+
+```text
+terraform/
+├── backend.tf                    # Shared backend configuration
+├── modules/
+│   ├── networking/              # Reusable VNet module
+│   └── aks/                     # Reusable AKS module
+└── environments/
+    ├── dev/
+    │   ├── main.tf              # Dev orchestration
+    │   ├── variables.tf         # Dev-specific variables
+    │   ├── outputs.tf           # Dev outputs
+    │   └── terraform.tfvars     # Dev values
+    ├── staging/                 # Future implementation
+    └── prod/                    # Future implementation
+```
+
+### Environment Progression
+
+1. **Development:** Single node, Basic SKUs, public endpoints
+2. **Staging:** 2 nodes, General Purpose, private endpoints
+3. **Production:** 3+ nodes, Business Critical, full security
+
+## Security Requirements
+
+### Identity and Access Management
+
+#### Managed Identities
+
+```hcl
+# AKS uses system-assigned managed identity
+identity {
+  type = "SystemAssigned"
+}
+
+# For Key Vault access
+identity {
+  type         = "UserAssigned"
+  identity_ids = [azurerm_user_assigned_identity.aks.id]
+}
+```
+
+#### RBAC Configuration
+
+```hcl
+# Azure AD integration
+azure_active_directory_role_based_access_control {
+  managed                = true
+  admin_group_object_ids = [var.aks_admin_group_object_id]
+}
+```
+
+### Network Security
+
+#### Network Security Groups
+
+```hcl
+# AKS subnet NSG rules
+security_rule {
+  name                       = "AllowHTTPS"
+  priority                   = 1001
+  direction                  = "Inbound"
+  access                     = "Allow"
+  protocol                   = "Tcp"
+  source_port_range          = "*"
+  destination_port_range     = "443"
+  source_address_prefix      = "*"
+  destination_address_prefix = "*"
+}
+```
+
+## Cost Control Requirements
+
+### Daily Budget Targets
+
+| Environment | Target Cost/Day | Monthly Estimate |
+|------------|----------------|------------------|
+| Development | $2.50 | $75 |
+| Staging | $3.00 | $90 |
+| Production | $8.00 | $240 |
+
+### Resource Sizing
+
+#### Basic SKU Selections
+
+- **ACR:** Basic (~$5/month) - sufficient for learning
+- **AKS:** Standard_B2s nodes - minimal viable compute
+- **Log Analytics:** 30-day retention - cost control
+
+#### Auto-Shutdown
+
+```bash
+# Daily destroy script
+#!/bin/bash
+ENV=${1:-dev}
+cd "terraform/environments/$ENV"
+terraform destroy -auto-approve
+```
+
+## Validation Requirements
+
+### Infrastructure Health Checks
+
+```bash
+# Terraform validation
+terraform validate
+terraform plan
+
+# Azure resource verification
+az resource list --resource-group dev-learn-rg --output table
+
+# AKS cluster validation
+kubectl get nodes
+kubectl get pods --all-namespaces
+```
+
+### Container Registry Validation
+
+```bash
+# ACR connectivity
+az acr login --name sharedlearnacr
+
+# Image operations
+docker pull sharedlearnacr.azurecr.io/api-service-1:dev-ready
+kubectl run test-pod --image=sharedlearnacr.azurecr.io/api-service-1:dev-ready
+```
+
+### Cost Monitoring
+
+```bash
+# Daily cost check
+az consumption usage list \
+  --start-date $(date -d "1 day ago" '+%Y-%m-%d') \
+  --end-date $(date '+%Y-%m-%d') \
+  --output table
+```
+
+## Troubleshooting Setup
+
+### Common Issues
+
+#### Service Principal Permissions
+
+**Error:** "AuthorizationFailed" during role assignment  
+**Solution:** Grant Owner role to terraform service principal
+
+#### AKS Authentication
+
+**Error:** kubelogin authentication timeout  
+**Solution:** Use `--admin` flag for cluster access
+
+#### Terraform State Lock
+
+**Error:** "lock already held"  
+**Solution:** `terraform force-unlock <lock-id>`
+
+### Debug Commands
+
+```bash
+# Check service principal permissions
+az role assignment list --assignee b5422da7-4709-4cdd-9ca4-47ea063df820
+
+# Verify AKS kubelet identity
+az aks show -g dev-learn-rg -n dev-learn-aks \
+  --query "identityProfile.kubeletidentity.objectId" -o tsv
+
+# Test ACR access
+az acr repository list --name sharedlearnacr
+```
+
+## Implementation Phases
+
+### Phase 1: Foundation (Current)
+
+- [x] Service principal setup with Owner role
+- [x] Terraform backend configuration
+- [x] Networking and AKS modules
+- [ ] Shared ACR implementation
+- [ ] AKS-ACR integration testing
+
+### Phase 2: Application Integration
+
+- [ ] Sample application containers
+- [ ] Container promotion workflow
+- [ ] PostgreSQL and Key Vault integration
+- [ ] End-to-end deployment testing
+
+### Phase 3: Multi-Environment
+
+- [ ] Staging environment setup
+- [ ] Production environment planning
+- [ ] Environment promotion pipeline
+- [ ] Complete automation
+
+This setup provides the foundation for enterprise-grade Azure container operations while maintaining cost efficiency for learning purposes.

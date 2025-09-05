@@ -28,6 +28,12 @@ variable "kubernetes_version" {
   default     = null # Uses latest supported version
 }
 
+variable "enable_monitoring" {
+  description = "Enable Azure Monitor for containers (ContainerInsights). Set to false for easier cleanup."
+  type        = bool
+  default     = true
+}
+
 variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)

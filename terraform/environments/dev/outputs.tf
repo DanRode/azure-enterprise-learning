@@ -43,3 +43,20 @@ output "aks_cluster_id" {
   description = "ID of the AKS cluster"
   value       = module.aks.cluster_id
 }
+
+# ACR outputs (shared enterprise pattern - referenced from shared environment)
+# Temporarily commented during migration - will be re-enabled after shared ACR is created
+# output "acr_name" {
+#   description = "Name of the shared Azure Container Registry"
+#   value       = data.azurerm_container_registry.shared.name
+# }
+
+# output "acr_login_server" {
+#   description = "Login server URL for the shared Azure Container Registry"
+#   value       = data.azurerm_container_registry.shared.login_server
+# }
+
+# output "acr_id" {
+#   description = "ID of the shared Azure Container Registry"
+#   value       = data.azurerm_container_registry.shared.id
+# }
