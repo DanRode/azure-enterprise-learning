@@ -40,20 +40,18 @@ module "networking" {
 
 # Reference shared ACR (enterprise pattern)
 # ACR is managed in shared environment and referenced here
-# Temporarily commented during migration
-# data "azurerm_container_registry" "shared" {
-#   name                = "sharedlearnacr"
-#   resource_group_name = "shared-learn-rg"
-# }
+data "azurerm_container_registry" "shared" {
+  name                = "sharedlearnacr"
+  resource_group_name = "shared-learn-rg"
+}
 
 # Grant AKS cluster access to shared ACR (enterprise pattern)
-# Temporarily commented during migration - will be re-enabled after shared ACR is created
-# resource "azurerm_role_assignment" "aks_acr_pull" {
-#   principal_id                     = module.aks.kubelet_identity_object_id
-#   role_definition_name             = "AcrPull"
-#   scope                           = data.azurerm_container_registry.shared.id
-#   skip_service_principal_aad_check = true
-# }
+resource "azurerm_role_assignment" "aks_acr_pull" {
+  principal_id                     = module.aks.kubelet_identity_object_id
+  role_definition_name             = "AcrPull"
+  scope                           = data.azurerm_container_registry.shared.id
+  skip_service_principal_aad_check = true
+}
 
 # Use our AKS module
 module "aks" {
