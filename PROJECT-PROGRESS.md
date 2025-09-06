@@ -1,151 +1,216 @@
-# Azure Enterprise Learning - Project Progress
+# Azure Enterprise Learning Project - Progress Tracking
 
-## Phase 1: MVP Infrastructure - COMPLETED ✅
+## Current Status: Phase 1 - Foundation Setup with Enterprise ACR Pattern
 
-**Date Completed:** September 4, 2025  
-**Duration:** ~4 hours  
-**Infrastructure Cost:** ~$2-3/day  
+**Target Budget:** $100 total / $3 per day maximum  
+**Current Phase:** Infrastructure foundation with shared ACR implementation  
+**Container Strategy:** Single shared Basic ACR with environment tag promotion  
 
-### What We Built
+## Phase 1: Foundation Infrastructure ✅ In Progress
 
-**Architecture:**
-```
-Resource Group (dev-learn-rg)
-├── VNet (10.0.0.0/16)
-│   ├── AKS Subnet (10.0.1.0/24)
-│   └── Database Subnet (10.0.2.0/24)
-├── Network Security Groups
-├── AKS Cluster (single B2s node)
-├── Log Analytics Workspace
-└── Deployed nginx application (publicly accessible)
-```
+### Completed ✅
 
-**Terraform Modules Created:**
-1. **Networking Module** (`terraform/modules/networking/`)
-   - VNet with hardcoded subnets
-   - NSGs with basic HTTP/HTTPS and PostgreSQL rules
-   - Clean module interface (inputs/outputs)
+1. **Project Structure & Documentation**
+   - ✅ Terraform directory structure with environments (dev/staging/prod)
+   - ✅ Module design decisions documented
+   - ✅ Daily cost control scripts in place
+   - ✅ Enterprise ACR pattern designed and documented
 
-2. **AKS Module** (`terraform/modules/aks/`)
-   - Single-node Kubernetes cluster
-   - Azure CNI networking
-   - Azure AD integration
-   - Log Analytics monitoring
-   - Cost-optimized configuration
+2. **Terraform Backend Configuration**
+   - ✅ Azure Storage Account created for state
+   - ✅ Backend configuration tested
+   - ✅ Multiple environment state isolation
 
-**Environment Configuration:**
-- Dev environment (`terraform/environments/dev/`)
-- Proper module integration with dependency chain
-- Separate Terraform state file for dev environment
+3. **Networking Module Design**
+   - ✅ Reusable VNet module created
+   - ✅ Subnet configuration for AKS
+   - ✅ Network security group baseline
 
-### Key Learning Outcomes
+4. **AKS Module Design**
+   - ✅ Configurable node pools
+   - ✅ RBAC integration ready
+   - ✅ Basic monitoring configuration
 
-**Module Design Patterns:**
-- ✅ Purpose-built modules vs. generic "factory" patterns
-- ✅ Clean dependency management (RG → Networking → AKS)
-- ✅ Required vs. optional variables (made tags required)
-- ✅ Selective output exposure at environment level
+### Currently Working On 🔄
 
-**Azure/AKS Specifics:**
-- ✅ Azure CNI vs. kubenet networking decisions
-- ✅ Service CIDR vs. VNet CIDR separation (10.1.x vs. 10.0.x)
-- ✅ Azure AD integration setup and kubelogin requirement
-- ✅ Admin vs. user credentials for cluster access
-- ✅ Load balancer automatic provisioning
+1. **Enterprise ACR Integration**
+   - ✅ ACR resource configuration (Basic SKU)
+   - 🔄 Service principal permissions elevation (needs Owner role)
+   - 🔄 AKS-ACR role assignment automation
+   - 🔄 Container promotion workflow documentation
 
-**Infrastructure as Code:**
-- ✅ Environment-specific Terraform state management
-- ✅ Module reusability across environments
-- ✅ Proper .gitignore for Terraform projects
-- ✅ Cost optimization strategies (single node, basic tiers)
+### Next Steps 📋
 
-### What We Deployed and Tested
+1. **Service Principal Elevation**
+   ```bash
+   # Grant temporary Owner role for learning environment
+   az role assignment create 
+     --assignee b5422da7-4709-4cdd-9ca4-47ea063df820 
+     --role Owner 
+     --scope /subscriptions/7a5bee06-2155-4808-885b-ba1c53c04dbd
+   ```
 
-**Application Deployment:**
-- ✅ Created Kubernetes manifest for nginx
-- ✅ Deployed with LoadBalancer service
-- ✅ Verified external accessibility (HTTP 200 responses)
-- ✅ Tested pod scheduling and resource limits
+2. **ACR Configuration Updates**
+   - Update ACR naming to reflect shared pattern: `sharedlearnacr`
+   - Verify AKS kubelet identity role assignment
+   - Test container pull capabilities
 
-**End-to-End Validation:**
-- ✅ Terraform plan/apply workflow
-- ✅ kubectl cluster connectivity
-- ✅ Application deployment and traffic routing
-- ✅ Azure Load Balancer integration
-- ✅ Clean destruction process
+3. **Container Promotion Workflow**
+   - Document image tagging strategy (commit SHA → environment tags)
+   - Create promotion automation scripts
+   - Test with sample applications
 
-### Design Decisions Made
+## Phase 2: Application Integration 📅 Planned
 
-**MVP Approach:**
-- Hardcoded subnet addresses for simplicity
-- Single-node cluster (no auto-scaling)
-- Basic monitoring (30-day retention)
-- Public endpoints (no private cluster)
+### Database & Secrets (Inline Resources)
 
-**Security Baseline:**
-- Azure AD integration enabled
-- RBAC enabled
-- Managed identities (system-assigned)
-- NSG rules for required traffic only
+- PostgreSQL Flexible Server configuration
+- Key Vault for application secrets
+- Connection string management
 
-**Cost Control:**
-- B2s VM size (cheapest viable for AKS)
-- Single replica deployment
-- Basic Log Analytics tier
-- Resource limits on applications
+### Sample Applications
 
-### Architecture Evolution Plan
+- API Service 1: Simple health check API
+- API Service 2: Database-connected API
+- Web App: Frontend application
 
-**Phase 2 Candidates:**
-- [ ] App Gateway integration
-- [ ] Private endpoints for databases
-- [ ] Azure Container Registry (ACR)
-- [ ] Key Vault for secrets management
-- [ ] PostgreSQL Flexible Server
-- [ ] Multi-environment scaling (staging, prod)
+## Phase 3: Enterprise Features 📅 Future
 
-**Future Improvements:**
-- [ ] Variable subnet sizing based on environment
-- [ ] Auto-scaling node pools
-- [ ] Private AKS cluster
-- [ ] GitOps deployment patterns
-- [ ] Monitoring and alerting setup
+### Advanced Networking
 
-### Success Metrics
+- Private endpoints
+- Application Gateway
+- WAF configuration
 
-**Infrastructure:**
-- ✅ Single-command deployment (`terraform apply`)
-- ✅ Predictable costs (~$2-3/day actual)
-- ✅ Clean module boundaries and reusability
+### Monitoring & Security
 
-**Application:**
-- ✅ Sub-1-minute application deployment
-- ✅ External HTTP accessibility
-- ✅ Proper Kubernetes resource scheduling
+- Azure Monitor integration
+- Log Analytics workspace
+- Security baseline
 
-**Learning:**
-- ✅ Module design patterns understood
-- ✅ Azure networking concepts applied
-- ✅ End-to-end troubleshooting experience
-- ✅ Enterprise-ready foundation established
+## Learning Progress & Key Decisions
 
-### Repository Structure Created
+### Modularity Strategy ✅ Established
 
-```
-azure-enterprise-learning/
-├── .gitignore                    # Terraform/IDE exclusions
-├── project-context.md            # Original requirements
-├── PROJECT-PROGRESS.md           # This file
-├── terraform/
-│   ├── backend.tf               # Shared backend config
-│   ├── modules/
-│   │   ├── networking/          # VNet, subnets, NSGs
-│   │   └── aks/                 # AKS cluster + monitoring
-│   └── environments/
-│       └── dev/                 # Dev environment config
-├── k8s/
-│   └── simple-app.yaml         # Nginx deployment manifest
-└── scripts/                    # Placeholder for automation
+**Modules Created:**
+- **Networking:** High reuse across 3+ environments, complex subnet/NSG configuration
+- **AKS:** Complex multi-node configuration, RBAC, monitoring integration
+
+**Kept Inline:**
+- **ACR:** Simple configuration, shared across environments (not duplicated)
+- **PostgreSQL:** Environment-specific sizing, low complexity
+- **Key Vault:** Simple per-environment secrets
+
+### Container Strategy ✅ Refined
+
+**Enterprise Pattern: Single Shared ACR with Tag Promotion**
+
+```text
+Registry: sharedlearnacr.azurecr.io
+├── api-service-1/
+│   ├── v1.2.3-commit-abc123    # Immutable build artifact
+│   ├── dev-ready               # Environment promotion tag
+│   ├── staging-ready           # Manual approval gate
+│   └── prod-ready              # Production readiness
 ```
 
-This foundational phase successfully demonstrates enterprise-grade infrastructure patterns with a working application deployment pipeline.
+**Benefits Realized:**
+- ✅ True immutable deployments (same binary across environments)
+- ✅ Cost optimization (single Basic ACR ~$5/month vs 3×$5)
+- ✅ Clear audit trail (production image traceable to exact commit)
+- ✅ Simplified RBAC (centralized access control)
+
+**vs. Environment-Specific Registries:**
+- ❌ More expensive (3×$5/month)
+- ❌ Risk of environment drift (different builds)
+- ❌ Complex promotion (cross-registry operations)
+
+### Technical Challenges & Solutions
+
+1. **Terraform Service Principal Permissions**
+   - **Challenge:** AKS-ACR integration requires role assignments
+   - **Root Cause:** Terraform SP has Contributor, needs User Access Administrator/Owner
+   - **Solution:** Temporary Owner elevation for learning environment
+   - **Enterprise Pattern:** Separate infrastructure vs. permissions management
+
+2. **Module Design Decisions**
+   - **Challenge:** Balance reusability vs. complexity
+   - **Learning:** Only modularize when clear reuse justification (3+ uses)
+   - **Result:** Networking (3 environments) and AKS (complex) became modules
+
+## Daily Budget Tracking
+
+| Date | Services Running | Estimated Cost | Notes |
+|------|------------------|----------------|-------|
+| Day 1-3 | Terraform backend setup | ~$0.50/day | Storage only |
+| Day 4-6 | + Dev AKS + ACR | ~$2.00/day | Single node AKS + Basic ACR |
+| Current | Foundation phase | ~$2.50/day | Target achieved ✅ |
+
+**Cost Optimization Measures:**
+- ✅ Daily destroy/rebuild scripts
+- ✅ Single-node AKS for development
+- ✅ Basic ACR SKU (not Standard/Premium)
+- ✅ Resource tagging for cost tracking
+
+## Key Lessons Learned
+
+1. **Module Design Philosophy**
+   - Only create modules for high-reuse, complex components
+   - Simple resources (ACR, Key Vault) work better inline
+   - Module interfaces should be minimal and stable
+
+2. **Enterprise Container Strategy**
+   - Shared registries with tag promotion > environment-specific registries
+   - Immutable artifacts with environment tagging provides best audit trail
+   - Cost benefits significant at scale
+
+3. **Service Principal Management**
+   - Infrastructure deployment vs. permission management often need different roles
+   - Learning environments can use elevated permissions temporarily
+   - Production would use separate service principals with principle of least privilege
+
+4. **Cost Control Strategy**
+   - Daily destroy/rebuild prevents bill shock
+   - Basic SKUs sufficient for learning/development
+   - Resource tagging essential for tracking
+
+## Environment Progression Plan
+
+```text
+Phase 1: Dev Environment (Current)
+├── Shared ACR (sharedlearnacr)
+├── Dev AKS cluster (1 node)
+├── Networking foundation
+└── Service principal setup
+
+Phase 2: Application Integration
+├── PostgreSQL Flexible Server
+├── Key Vault for secrets
+├── Sample applications deployed
+└── Container promotion workflow
+
+Phase 3: Multi-Environment
+├── Staging environment
+├── Production environment
+├── Environment promotion gates
+└── Complete CI/CD pipeline
+
+Phase 4: Enterprise Features
+├── Application Gateway
+├── Private endpoints
+├── Advanced monitoring
+└── Security hardening
+```
+
+## Next Session Priorities
+
+1. **Resolve Service Principal Permissions** - Grant temporary Owner role
+2. **Complete ACR Integration** - Fix naming and test AKS pull permissions  
+3. **Deploy First Application** - Test complete build → tag → deploy workflow
+4. **Document Promotion Process** - Create reusable promotion scripts
+
+**Success Criteria for Phase 1:**
+- ✅ AKS cluster can pull images from shared ACR
+- ✅ Container promotion workflow documented and tested
+- ✅ Daily budget under $3
+- ✅ Foundation ready for application deployment

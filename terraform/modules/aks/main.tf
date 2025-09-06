@@ -52,9 +52,13 @@ resource "azurerm_kubernetes_cluster" "main" {
     service_cidr   = "10.1.0.0/16"
   }
 
-  # Basic monitoring with Log Analytics
-  oms_agent {
-    log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
+  # Conditional monitoring with Log Analytics
+  # Enterprise pattern: Allow disabling for easier cleanup
+  dynamic "oms_agent" {
+    for_each = var.enable_monitoring ? [1] : []
+    content {
+      log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
+    }
   }
 
   # Disable features to reduce costs
@@ -63,9 +67,9 @@ resource "azurerm_kubernetes_cluster" "main" {
   # Enable RBAC
   role_based_access_control_enabled = true
 
-  # Basic Azure AD integration
+  # Azure AD integration (updated syntax)
   azure_active_directory_role_based_access_control {
-    managed = true
+    azure_rbac_enabled = true
   }
 
   tags = var.tags

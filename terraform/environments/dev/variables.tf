@@ -22,12 +22,18 @@ variable "kubernetes_version" {
   default     = null # Uses latest supported version
 }
 
+variable "enable_monitoring" {
+  description = "Enable Azure Monitor for containers. Set to false for easier cleanup during learning."
+  type        = bool
+  default     = false # Disabled by default for easier cleanup
+}
+
 variable "tags" {
   description = "Tags for dev environment resources"
   type        = map(string)
   default = {
     Environment = "dev"
-    Project     = "azure-learning"
+    Project     = "azure-enterprise-learning"
     ManagedBy   = "terraform"
   }
 }
